@@ -33,6 +33,7 @@ void setup() {
     /* initialize inputs */
     pinMode(JOYSTICK_X_PIN, INPUT);
     pinMode(JOYSTICK_Y_PIN, INPUT);
+    pinMode(SPEED_PIN, INPUT);
 
     /* initialize the 7 segment display */
     pinMode(STCP_PIN, OUTPUT);

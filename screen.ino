@@ -174,7 +174,7 @@ void write_string(int r, int c, char *str, int len) {
 }
 
 void draw_arrow(int col, int idx, int len) {
-    if (idx > 0)
+    if (idx > 0 && len > 1)
         write_custom_char(0, col, custom_char_e::UpArrow);
     else
         write_ascii_char(0, col, ' ');

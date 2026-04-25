@@ -59,55 +59,34 @@ bool is_opposite(joystick_dir_t a, joystick_dir_t b) {
 
 // fruit index
 int fruit = 0;
-// number of empty space
-int n_available = 32;
-// list of empty space(unordered)
-char available[32] = {0};
-
-uint32_t last_update = 0;
-uint32_t sec_per_update = 400;
-
-// index into variable
-char avail_idx[32] = {0};
-
-void reset_available() {
-    n_available = max_snake_len;
-    for (int i = 0; i < max_snake_len; i++) {
-        available[i] = i;
-        avail_idx[i] = i;
-    }
-}
-
-void add_available(int cell) {
-    available[n_available] = cell;
-    avail_idx[cell] = n_available;
-    n_available += 1;
-}
-
-void remove_available(int cell) {
-    int i = avail_idx[cell];
-    int last = available[n_available - 1];
-    available[i] = last;
-    avail_idx[last] = i;
-    avail_idx[cell] = -1;
-    n_available -= 1;
-}
 
 void spawn_fruit() {
-    int idx = rand() % n_available;
-    fruit = available[idx];
-    remove_available(fruit);
+    bool occupied[max_snake_len] = {false};
+    for (int i = tail; i != head; i = (i + 1) % max_snake_len)
+        occupied[snake[i]] = true;
+
+    int available[max_snake_len];
+    int n_available = 0;
+    for (int i = 0; i < max_snake_len; i++)
+        if (!occupied[i])
+            available[n_available++] = i;
+
+    fruit = available[rand() % n_available];
 }
 
 /* snake logic */
 
 void reset_snake() {
-    for (int i = 0; i < max_snake_len; i++)
-        snake[i] = -1;
-
     snake[0] = 0;
     head = 1;
     tail = 0;
+}
+
+bool is_body(int idx) {
+    for (int i = tail; i != head; i = (i + 1) % max_snake_len)
+        if (snake[i] == idx)
+            return true;
+    return false;
 }
 
 game_state_e update_snake() {
@@ -141,56 +120,25 @@ game_state_e update_snake() {
 
     bool ate = (next == fruit);
 
-    if (ate) {
-        if (n_available == 0) {
-            // no more empty space
-            score += 1;
-            return game_state_e::Win;
-        }
-        spawn_fruit();
-        score += 1;
-    } else {
-        add_available(snake[tail]);
-        tail = (tail + 1) % max_snake_len;
-    }
-
-    for (int i = tail; i != head; i = (i + 1) % max_snake_len) {
-        // hitting body
-        if (snake[i] == next)
-            return game_state_e::Lose;
-    }
-
-    // fruit cells are removed from the pool on spawn; only mark
-    // the head cell occupied when we moved into empty space.
     if (!ate)
-        remove_available(next);
+        tail = (tail + 1) % max_snake_len;
+
+    if (is_body(next))
+        return game_state_e::Lose;
 
     snake[head] = next;
     head = (head + 1) % max_snake_len;
+
+    if (ate) {
+        score += 1;
+        if (score == max_snake_len)
+            return game_state_e::Win;
+        spawn_fruit();
+    }
+
     return game_state_e::Ongoing;
 }
 
-void reset_game() {
-    reset_snake();
-    reset_available();
-
-    for (int i = tail; i != head; i = (i + 1) % max_snake_len)
-        remove_available(snake[i]);
-
-    spawn_fruit();
-
-    last_move = joystick_dir_t::Right;
-    pending_move = joystick_dir_t::Right;
-
-    score = 1;
-    last_update = 0;
-}
-
-void to_game_scene() {
-    current_scene = scene_e::Game;
-    clear_screen();
-    reset_game();
-}
 
 /* drawing */
 
@@ -201,6 +149,12 @@ void draw_game() {
     write_custom_char(1, 7, custom_char_e::Border);
 
     write_string(0, 0, "score:", 6);
+    if (score >= 10) {
+        write_ascii_char(1, 0, score / 10 + '0');
+        write_ascii_char(1, 1, score % 10 + '0');
+    } else {
+        write_ascii_char(1, 0, score + '0');
+    }
 
     board_cell_e board[32];
     for (int i = 0; i < 32; i++)
@@ -234,7 +188,7 @@ void draw_game() {
                 glyph = custom_char_e::AirFruit;
             else if (top == board_cell_e::Snake && bot == board_cell_e::Fruit)
                 glyph = custom_char_e::SnakeFruit;
-            else 
+            else
                 glyph = custom_char_e::FruitSnake;
 
             write_custom_char(lcd_r, 8 + lcd_c, glyph);
@@ -245,21 +199,62 @@ void draw_game() {
 void to_title_scene();
 void add_score(int score);
 
+const int end_screen_time = 1500;
+int end_screen_count_down = 0;
+uint32_t last_update = 0;
+
+void reset_game() {
+    reset_snake();
+    spawn_fruit();
+
+    last_move = joystick_dir_t::Right;
+    pending_move = joystick_dir_t::Right;
+
+    score = 1;
+    last_update = 0;
+}
+
+void to_game_scene() {
+    current_scene = scene_e::Game;
+    end_screen_count_down = 0;
+    clear_screen();
+    reset_game();
+}
+
 void update_game_scene(uint32_t time_diff) {
+    if (end_screen_count_down > 0) {
+        end_screen_count_down -= time_diff;
+
+        if (end_screen_count_down <= 0)
+            to_title_scene();
+
+        return;
+    }
+
     joystick_dir_t dir = get_joystick_dir();
+
     if (dir != joystick_dir_t::None)
         pending_move = dir;
 
+    int pot_value = 4095; // replace with potentiometer value
+    int time_between_update = (pot_value * 800) / 4095 + 200;
+
     last_update += time_diff;
-    while (last_update > sec_per_update) {
+    while (last_update > time_between_update) {
         if (!is_opposite(pending_move, last_move))
             last_move = pending_move;
 
         game_state_e result = update_snake();
-        last_update -= sec_per_update;
+        last_update -= time_between_update;
+
         if (result != game_state_e::Ongoing) {
+            if (result == game_state_e::Lose)
+                write_string(0, 0, "lose  ", 6);
+            else
+                write_string(0, 0, "win   ", 6);
+
             add_score(score);
-            to_title_scene();
+            end_screen_count_down = end_screen_time;
             return;
         }
     }

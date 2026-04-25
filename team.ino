@@ -21,8 +21,9 @@ void update_team_scene(uint32_t time_diff) {
         return;
     }
 
-    write_string(0, 0, (char *)"Team", 4);
-    write_string(1, 0, (char *)"ESP32 Snake", 11);
+    write_string(0, 0, "Made By", 7);
+
+    
 }
 
 #endif

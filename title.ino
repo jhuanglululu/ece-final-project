@@ -10,13 +10,9 @@ void update_title_scene(uint32_t time_diff);
 #ifndef TITLE_IMPL_GUARD
 #define TITLE_IMPL_GUARD
 
-// score.ino and team.ino are included after title.ino, so forward
-// declare the transitions we invoke. to_game_scene is already
-// visible via game.ino above us in the include chain.
 void to_score_scene();
 void to_team_scene();
 
-// scene state -- reset by to_title_scene so re-entry starts clean.
 Animation title_animation = {.frame_ms = 333, .frame_count = 9, .repeat = 1};
 int title_list_idx = 0;
 joystick_dir_t title_prev_js_dir = joystick_dir_t::None;
@@ -82,7 +78,7 @@ void update_title_scene(uint32_t time_diff) {
 
     const char *LIST_ENTRY[4] = {"start", "score", "team ", "     "};
 
-    draw_arrow(15, title_list_idx, 2);
+    draw_arrow(15, title_list_idx, 3);
 
     write_custom_char(0, 15 - 6, custom_char_e::SelectArrow);
     write_string(0, 15 - 5, (char *)LIST_ENTRY[title_list_idx], 5);
