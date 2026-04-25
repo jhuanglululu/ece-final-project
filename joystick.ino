@@ -10,6 +10,8 @@ joystick_dir_t get_joystick_dir();
 #ifndef JOYSTICK_IMPL_GUARD
 #define JOYSTICK_IMPL_GUARD
 
+#include "ir_remote.ino"
+
 const int JOYSTICK_X_PIN = 35;
 const int JOYSTICK_Y_PIN = 34;
 
@@ -17,6 +19,11 @@ const int JOYSTICK_OFFSET = 4096 / 2;
 const int JOYSTICK_THRESH = 512;
 
 joystick_dir_t get_joystick_dir() {
+    // ir has higher priority
+    joystick_dir_t ir_dir = get_ir_dir();
+    if (ir_dir != joystick_dir_t::None)
+        return ir_dir;
+
     int x = analogRead(JOYSTICK_X_PIN) - JOYSTICK_OFFSET;
     int y = analogRead(JOYSTICK_Y_PIN) - JOYSTICK_OFFSET;
 
@@ -31,5 +38,6 @@ joystick_dir_t get_joystick_dir() {
     else
         return joystick_dir_t::Right;
 }
+
 #endif
 #endif

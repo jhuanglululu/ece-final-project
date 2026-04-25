@@ -20,9 +20,8 @@
 #include "team.ino"
 #define BUZZER_IMPL
 #include "buzzer.ino"
-
-bool system_on = false;
-bool last_button_state = LOW;
+#define IR_REMOTE_IMPL
+#include "ir_remote.ino"
 
 const int POWER_BUTTON_PIN = 14;
 const int LED_PIN = 26;
@@ -35,9 +34,10 @@ const int LED_PIN = 26;
 /* setup and loop */
 
 void setup() {
+    Serial.begin(115200);
+
     /* initialize the lcd */
     lcd.init();
-    lcd.backlight();
     lcd.clear();
 
     /* initialize inputs */
@@ -67,32 +67,34 @@ void setup() {
     lcd.noBacklight();
 
     init_iot_score();
+    init_ir_remote();
 
     init_lcd_mem_slot();
     clear_screen();
     draw_screen();
     to_title_scene();
+    draw_screen();
 }
 
+int system_on = 0;
+
 void update_power_button() {
+    static int last_button_state = LOW;
     bool button_state = digitalRead(POWER_BUTTON_PIN);
 
-    if (button_state == LOW && last_button_state == HIGH) {
-        system_on = !system_on;
+    if (button_state == HIGH && last_button_state == LOW) {
+        system_on = system_on ^ 0x1;
 
-        if (system_on) {
+        if (system_on == 1) {
             lcd.display();
             lcd.backlight();
             digitalWrite(LED_PIN, HIGH);
-            clear_screen();
             to_title_scene();
         } else {
             lcd.noDisplay();
             lcd.noBacklight();
             digitalWrite(LED_PIN, LOW);
         }
-
-        delay(200);
     }
 
     last_button_state = button_state;
@@ -105,7 +107,7 @@ void loop() {
 
     update_power_button();
 
-    if (!system_on) {
+    if (system_on == 0) {
         delay(33);
         return;
     }
