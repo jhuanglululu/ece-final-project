@@ -23,6 +23,7 @@ void update_game_scene(uint32_t time_diff);
 #include "screen.ino"
 #include "score.ino"
 #include "title.ino"
+#include "iot_score.ino"
 
 /* input pins */
 const int SPEED_PIN = 39; // potentiometer: snake speed
@@ -134,6 +135,7 @@ game_state_e update_snake() {
         score += 1;
         if (score == max_snake_len)
             return game_state_e::Win;
+        set_score_display(score);
         spawn_fruit();
     }
 
@@ -252,6 +254,7 @@ void update_game_scene(uint32_t time_diff) {
                 write_string(0, 0, "win   ", 6);
 
             add_score(score);
+            publish_score(score);
             end_screen_count_down = end_screen_time;
             return;
         }

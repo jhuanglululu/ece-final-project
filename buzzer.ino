@@ -28,8 +28,8 @@ const int MUSIC_PAUSE[] =
 
 const int MUSIC_NOTE_COUNT = 22; // 6 * 3 + 4
 
-uint32_t eating_sound_progress = 0;
-uint32_t music_duration = 0; // for pause and duration
+int32_t eating_sound_progress = 0;
+int32_t music_duration = 0; // for pause and duration
 int music_progress = 0;      // music index
 int note_playing = 0;        // 1 when playing note and 0 when pausing
 
