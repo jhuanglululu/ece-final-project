@@ -22,8 +22,6 @@ void update_team_scene(uint32_t time_diff) {
     }
 
     write_string(0, 0, "Made By", 7);
-
-    
 }
 
 #endif

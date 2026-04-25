@@ -19,17 +19,10 @@ void update_game_scene(uint32_t time_diff);
 #define GAME_IMPL_GUARD
 
 /* input pins */
-const int START_PIN = 14; // button: start/reset game
 const int SPEED_PIN = 39; // potentiometer: snake speed
 
 /* output pins */
-const int GAMESTATE_PIN = 26; // led: gamestate
 const int BUZZER_PIN = 12;    // buzzer: sound effect
-
-/* 7 segment display */
-const int STCP_PIN = 4; // brown IO4
-const int SHCP_PIN = 5; // blue IO5
-const int DS_PIN = 2;   // purple io 2
 
 /* board information */
 const int rows = 4;
@@ -236,8 +229,8 @@ void update_game_scene(uint32_t time_diff) {
     if (dir != joystick_dir_t::None)
         pending_move = dir;
 
-    int pot_value = 4095; // replace with potentiometer value
-    int time_between_update = (pot_value * 800) / 4095 + 200;
+    int pot_value = analogRead(SPEED_PIN); // replace with potentiometer value
+    int time_between_update = map(pot_value, 0, 4095, 200, 1000);
 
     last_update += time_diff;
     while (last_update > time_between_update) {
