@@ -89,6 +89,7 @@ void update_power_button() {
             lcd.display();
             lcd.backlight();
             digitalWrite(LED_PIN, HIGH);
+            reset_sound();
             to_title_scene();
         } else {
             lcd.noDisplay();
