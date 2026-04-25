@@ -18,6 +18,12 @@ void update_game_scene(uint32_t time_diff);
 #ifndef GAME_IMPL_GUARD
 #define GAME_IMPL_GUARD
 
+#include "joystick.ino"
+#include "buzzer.ino"
+#include "screen.ino"
+#include "score.ino"
+#include "title.ino"
+
 /* input pins */
 const int SPEED_PIN = 39; // potentiometer: snake speed
 
@@ -123,6 +129,8 @@ game_state_e update_snake() {
     head = (head + 1) % max_snake_len;
 
     if (ate) {
+        play_eating_sound();
+        
         score += 1;
         if (score == max_snake_len)
             return game_state_e::Win;
@@ -188,9 +196,6 @@ void draw_game() {
         }
     }
 }
-
-void to_title_scene();
-void add_score(int score);
 
 const int end_screen_time = 1500;
 int end_screen_count_down = 0;

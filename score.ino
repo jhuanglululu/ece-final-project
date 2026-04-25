@@ -11,6 +11,10 @@ void update_score_scene(uint32_t time_diff);
 #ifndef SCORE_IMPL_GUARD
 #define SCORE_IMPL_GUARD
 
+#include "joystick.ino"
+#include "screen.ino"
+#include "title.ino"
+
 int score_idx = 0;
 joystick_dir_t score_prev_js_dir = joystick_dir_t::None;
 

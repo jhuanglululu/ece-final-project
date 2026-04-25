@@ -18,6 +18,8 @@
 #include "score.ino"
 #define TEAM_IMPL
 #include "team.ino"
+#define BUZZER_IMPL
+#include "buzzer.ino"
 
 bool system_on = false;
 bool last_button_state = LOW;
@@ -47,8 +49,17 @@ void setup() {
     pinMode(SHCP_PIN, OUTPUT);
     pinMode(DS_PIN, OUTPUT);
 
+    /* initialize power button and led */
+
     pinMode(POWER_BUTTON_PIN, INPUT);
     pinMode(LED_PIN, OUTPUT);
+
+    /* intialize buzzer */
+
+    pinMode(ACTIVE_BUZZER_PIN, OUTPUT);                                  // Set as output
+    ledcAttach(PASSIVE_BUZZER_PIN, BUZZER_FREQUENCY, BUZZER_RESOLUTION); // Set up the PWM pin
+
+    /* other setup */
 
     digitalWrite(LED_PIN, LOW);
 
@@ -100,6 +111,7 @@ void loop() {
     }
 
     update_iot_score(time_diff);
+    update_sound(time_diff);
 
     switch (current_scene) {
     case scene_e::Title:

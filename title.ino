@@ -10,8 +10,12 @@ void update_title_scene(uint32_t time_diff);
 #ifndef TITLE_IMPL_GUARD
 #define TITLE_IMPL_GUARD
 
-void to_score_scene();
-void to_team_scene();
+#include "animation.ino"
+#include "joystick.ino"
+#include "screen.ino"
+#include "score.ino"
+#include "team.ino"
+#include "game.ino"
 
 Animation title_animation = {.frame_ms = 333, .frame_count = 9, .repeat = 1};
 int title_list_idx = 0;

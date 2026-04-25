@@ -10,6 +10,10 @@ void update_team_scene(uint32_t time_diff);
 #ifndef TEAM_IMPL_GUARD
 #define TEAM_IMPL_GUARD
 
+#include "joystick.ino"
+#include "screen.ino"
+#include "title.ino"
+
 void to_team_scene() {
     current_scene = scene_e::Team;
     clear_screen();
