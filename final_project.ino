@@ -1,3 +1,5 @@
+/* main project file*/
+
 #define ANIMATION_IMPL
 #include "animation.ino"
 #define CUSTOM_CHARS_IMPL

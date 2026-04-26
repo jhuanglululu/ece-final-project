@@ -1,6 +1,8 @@
 #ifndef ANIMATION_INO
 #define ANIMATION_INO
-// animation helper
+
+/* this file includes animation logics */
+
 struct Animation {
     uint32_t timer;
     uint32_t frame_ms;
@@ -18,11 +20,13 @@ void reset_animation(Animation *anim);
 #define ANIMATION_IMPL_GUARD
 
 void update_animation(Animation *anim, uint32_t time_diff) {
-    if (anim->repeat == 0 && anim->frame == anim->frame_count - 1)
-        return;
-    else if (anim->repeat == 0 && anim->frame >= anim->frame_count)
+    if (anim->repeat == 0 && anim->frame >= anim->frame_count - 1) {
+        // return if animation does not need to be repeated
         anim->frame = anim->frame_count - 1;
+        return;
+    }
 
+    // increment timer and update frame
     anim->timer += time_diff;
     anim->frame += anim->timer / anim->frame_ms;
     anim->timer %= anim->frame_ms;

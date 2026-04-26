@@ -1,6 +1,8 @@
 #ifndef IR_REMOTE_INO
 #define IR_REMOTE_INO
 
+/* this file includes ir remote logic */
+
 #include "joystick.ino"
 
 void init_ir_remote();

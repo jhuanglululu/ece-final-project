@@ -1,7 +1,10 @@
 #ifndef SCREEN_INO
 #define SCREEN_INO
-#include <LiquidCrystal_I2C.h>
+
+/* this file includes screen rendering logic */
+
 #include "custom_chars.ino"
+#include <LiquidCrystal_I2C.h>
 
 void init_lcd_mem_slot();
 void clear_screen();
@@ -15,34 +18,41 @@ void draw_arrow(int col, int idx, int len);
 #ifdef SCREEN_IMPL
 #ifndef SCREEN_IMPL_GUARD
 #define SCREEN_IMPL_GUARD
+
 #include <LiquidCrystal_I2C.h>
 
-/* screen, IO21 & IO 22 */
+// screen, IO21 & IO 22
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 struct lcd_mem_slot_t {
-    int empty;
     int last_used;
     custom_char_e c;
 };
 
+// array that holds what is in the lcd custom character memory
 lcd_mem_slot_t lcd_mems[8];
 
 void init_lcd_mem_slot() {
     for (int i = 0; i < 8; i++) {
-        lcd_mems[i] = {.empty = 1, .last_used = 0, .c = custom_char_e::UpArrow};
+        lcd_mems[i] = {.last_used = -1, .c = custom_char_e::UpArrow};
     }
 }
 
 /*
  * virtual screen
  *
- * store a buffer in the cpp program and only update characters
- * that change so we don't see flashing characters or lag
+ * store a buffer in esp32 and only update characters that change
+ * so we don't see flashing characters or lag
  *
  * because of the buffer, writing the same character to the same
  * cell every frame or doing multiple write to same cell in one
  * frame cost nothing
+ * 
+ * in other part of the project, when something is written with
+ * - write_ascii_char(...),
+ * - write_string(...)
+ * - write_custom_char(...)
+ * the characters are written to the virtual screen, not the lcd
  */
 
 enum class cell_kind_e { Custom, Ascii };
@@ -55,8 +65,8 @@ struct cell_t {
 const int SCREEN_COLUMN = 16;
 const int SCREEN_ROW = 2;
 
-cell_t cur_screen[SCREEN_ROW][SCREEN_COLUMN];
-cell_t next_screen[SCREEN_ROW][SCREEN_COLUMN];
+cell_t cur_screen[2][16];
+cell_t next_screen[2][16];
 
 int cell_equal(int r, int c) {
     cell_t c1 = cur_screen[r][c];
@@ -67,13 +77,15 @@ int cell_equal(int r, int c) {
 }
 
 void clear_screen() {
-    for (int r = 0; r < SCREEN_ROW; r++) {
-        for (int c = 0; c < SCREEN_COLUMN; c++) {
+    for (int r = 0; r < 2; r++) {
+        for (int c = 0; c < 16; c++) {
             next_screen[r][c] = {cell_kind_e::Ascii, ' '};
         }
     }
 }
 
+// although this function looks long, it is actually really 
+// cheap to run since the screen is small
 void draw_screen() {
     static uint32_t counter = 0;
 
@@ -81,8 +93,8 @@ void draw_screen() {
 
     // 1st pass: find which custom char does next_screen need
     bool needed[custom_char_count] = {false};
-    for (int r = 0; r < SCREEN_ROW; r++) {
-        for (int c = 0; c < SCREEN_COLUMN; c++) {
+    for (int r = 0; r < 2; r++) {
+        for (int c = 0; c < 16; c++) {
             cell_t cell = next_screen[r][c];
             if (cell.kind == cell_kind_e::Custom)
                 needed[cell.value] = true;
@@ -99,7 +111,7 @@ void draw_screen() {
         lcd_mem_slot_t slot = lcd_mems[s];
         int c = (int)slot.c;
         // if the slot is not empty and we need it
-        if (!slot.empty && needed[c]) {
+        if (slot.last_used != -1 && needed[c]) {
             slot_kept[s] = true;
             char_to_slot[c] = s;
             lcd_mems[s].last_used = counter;
@@ -118,8 +130,9 @@ void draw_screen() {
             // someone else is using, skip
             if (slot_kept[s])
                 continue;
+
             // slot is empty, take this one
-            if (lcd_mems[s].empty) {
+            if (lcd_mems[s].last_used == -1) {
                 best_slot = s;
                 break;
             }
@@ -127,6 +140,7 @@ void draw_screen() {
             // no best slot yet
             if (best_slot == -1)
                 best_slot = s;
+
             // or this slot is not used for longer
             else if (lcd_mems[s].last_used < lcd_mems[best_slot].last_used)
                 best_slot = s;
@@ -136,9 +150,7 @@ void draw_screen() {
         lcd.createChar(best_slot, custom_char_bitmap((custom_char_e)c_idx));
 
         lcd_mems[best_slot].c = (custom_char_e)c_idx;
-        lcd_mems[best_slot].empty = 0;
         lcd_mems[best_slot].last_used = counter;
-        // mark it as used
         slot_kept[best_slot] = true;
         char_to_slot[c_idx] = best_slot;
     }
@@ -165,6 +177,7 @@ void write_custom_char(int r, int c, custom_char_e ch) { next_screen[r][c] = {ce
 
 void write_ascii_char(int r, int c, char ch) { next_screen[r][c] = {cell_kind_e::Ascii, (uint8_t)ch}; }
 
+// call write_ascii_char multiple time to write the string
 void write_string(int r, int c, char *str, int len) {
     for (int i = 0; i < len; i++) {
         if (c + i >= SCREEN_COLUMN)
@@ -173,6 +186,7 @@ void write_string(int r, int c, char *str, int len) {
     }
 }
 
+// helper function for drawing arrow since is it use multiple times
 void draw_arrow(int col, int idx, int len) {
     if (idx > 0 && len > 1)
         write_custom_char(0, col, custom_char_e::UpArrow);

@@ -28,6 +28,7 @@ joystick_dir_t get_joystick_dir() {
     int y = analogRead(JOYSTICK_Y_PIN) - JOYSTICK_OFFSET;
 
     if (abs(x) < JOYSTICK_THRESH && abs(y) < JOYSTICK_THRESH)
+    // return if x and y is below threshold to filter out noise
         return joystick_dir_t::None;
     if (abs(x) < abs(y) && y < 0)
         return joystick_dir_t::Up;

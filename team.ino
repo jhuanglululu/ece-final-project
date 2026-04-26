@@ -1,5 +1,8 @@
 #ifndef TEAM_INO
 #define TEAM_INO
+
+/* this file includes scene page */
+
 #include "scene.ino"
 
 void to_team_scene();
@@ -11,6 +14,7 @@ void update_team_scene(uint32_t time_diff);
 #define TEAM_IMPL_GUARD
 
 #include "buzzer.ino"
+#include "custom_chars.ino"
 #include "joystick.ino"
 #include "screen.ino"
 #include "title.ino"
@@ -19,11 +23,27 @@ int team_list_idx = 0;
 joystick_dir_t team_prev_js_dir = joystick_dir_t::None;
 
 Animation train_anim = {.frame_ms = 200, .frame_count = 85, .repeat = 1};
+Animation abdi_anim = {.frame_ms = 200, .frame_count = 5, .repeat = 0};
+Animation antonio_anim = {.frame_ms = 200, .frame_count = 8, .repeat = 0};
+Animation chuang_anim = {.frame_ms = 200, .frame_count = 7, .repeat = 0};
 
 void to_team_scene() {
     current_scene = scene_e::Team;
     team_list_idx = 0;
+    reset_animation(&train_anim);
+    reset_animation(&abdi_anim);
+    reset_animation(&antonio_anim);
+    reset_animation(&chuang_anim);
     clear_screen();
+}
+
+void typing_animation(Animation *anim, uint32_t time_diff, char *name, int length) {
+    update_animation(anim, time_diff);
+
+    write_string(0, 0, "       ", length);
+    write_string(0, 0, name, anim->frame);
+    if (anim->frame < length)
+        write_custom_char(0, anim->frame, custom_char_e::TypingCursor);
 }
 
 void update_team_scene(uint32_t time_diff) {
@@ -32,6 +52,8 @@ void update_team_scene(uint32_t time_diff) {
     joystick_dir_t js_dir = get_joystick_dir();
     if (js_dir != team_prev_js_dir) {
         team_prev_js_dir = js_dir;
+
+        int prev = team_list_idx;
 
         switch (js_dir) {
         case joystick_dir_t::Up:
@@ -46,19 +68,25 @@ void update_team_scene(uint32_t time_diff) {
         }
 
         team_list_idx = constrain(team_list_idx, 0, 2);
+
+        if (prev != team_list_idx) {
+            reset_animation(&abdi_anim);
+            reset_animation(&antonio_anim);
+            reset_animation(&chuang_anim);
+        }
     }
 
     draw_arrow(15, team_list_idx, 3);
 
     switch (team_list_idx) {
     case 0:
-        write_string(0, 0, "Abdi", 4);
+        typing_animation(&abdi_anim, time_diff, "Abdi", 4);
         break;
     case 1:
-        write_string(0, 0, "Antonio", 7);
+        typing_animation(&antonio_anim, time_diff, "Antonio", 7);
         break;
     case 2:
-        write_string(0, 0, "Chuang", 6);
+        typing_animation(&chuang_anim, time_diff, "Chuang", 6);
         break;
     }
     update_animation(&train_anim, time_diff);

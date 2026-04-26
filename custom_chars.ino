@@ -1,6 +1,8 @@
 #ifndef CUSTOM_CHARS_INO
 #define CUSTOM_CHARS_INO
-// custom characters
+
+/* this file includes custom characters and their byte array */
+
 enum class custom_char_e : int {
     UpArrow,
     DownArrow,
@@ -15,22 +17,19 @@ enum class custom_char_e : int {
     SnakeFruit,
     FruitSnake,
     Border,
-
     TrainLeft0,
     TrainLeft1,
     TrainLeft2,
     TrainLeft3,
-
     TrainMid0,
     TrainMid1,
     TrainMid2,
     TrainMid3,
     TrainMid4,
-
     TrainRight2,
     TrainRight3,
     TrainRight4,
-    Count,
+    Count
 };
 
 constexpr custom_char_e operator+(custom_char_e e, int n) {
@@ -44,6 +43,8 @@ uint8_t *custom_char_bitmap(custom_char_e g);
 #ifdef CUSTOM_CHARS_IMPL
 #ifndef CUSTOM_CHARS_IMPL_GUARD
 #define CUSTOM_CHARS_IMPL_GUARD
+
+// each custom character is eight 5-bit numbers
 
 byte up_arrow[8] = {
     0b00000, 0b00000, 0b00000, 0b00100, 0b01110, 0b01010, 0b00000, 0b00000,

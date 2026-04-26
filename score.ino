@@ -1,5 +1,8 @@
 #ifndef SCORE_INO
 #define SCORE_INO
+
+/* this file includes high score page logic */
+
 #include "scene.ino"
 
 void to_score_scene();

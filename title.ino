@@ -1,5 +1,8 @@
 #ifndef TITLE_INO
 #define TITLE_INO
+
+/* this file includes title page */
+
 #include "scene.ino"
 
 void to_title_scene();

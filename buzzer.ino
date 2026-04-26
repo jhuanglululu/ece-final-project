@@ -1,6 +1,8 @@
 #ifndef BUZZER_INO
 #define BUZZER_INO
 
+/* this file includes sound playing logic */
+
 const int PASSIVE_BUZZER_PIN = 27; // buzzer pin
 const int ACTIVE_BUZZER_PIN = 33;  // buzzer pin
 const int BUZZER_FREQUENCY = 2000;
@@ -22,13 +24,14 @@ const float MUSIC_NOTE[] = {261.63, 329.63, 349.23, 392.00, 349.23, 329.63, 261.
 const int MUSIC_DURATION[] = {500, 500, 500, 500, 250, 250, 500, 500, 500, 500, 250,
                               250, 500, 500, 500, 500, 250, 250, 500, 500, 500, 500};
 
+// delay between each note
 const int MUSIC_PAUSE[] = {100, 100, 50,  50, 50, 100, 100, 100, 50, 50, 50,
                            100, 100, 100, 50, 50, 50,  100, 100, 50, 50, 100};
 
-const int MUSIC_NOTE_COUNT = 22; // 6 * 3 + 4
+const int MUSIC_NOTE_COUNT = 22; 
 
 int32_t eating_sound_progress = 0;
-int32_t music_duration = 0; // for pause and duration
+int32_t music_duration = 0; 
 int music_progress = 0;     // music index
 int note_playing = 0;       // 1 when playing note and 0 when pausing
 
@@ -39,9 +42,10 @@ void reset_sound() {
     note_playing = 0;
 }
 
+// one timer for music and eating sound is needed
+// since delay can't be used or else the game will
+// be block while the music is playing
 void update_sound(uint32_t time_diff) {
-    // can't use delay since it is blocking
-
     // stop eating sound after 1ms
     if (eating_sound_progress > 0) {
 

@@ -1,6 +1,8 @@
 #ifndef SCENE_INO
 #define SCENE_INO
 
+/* this file includes definition of scene enum */
+
 enum class scene_e { Title, Score, Team, Game };
 
 extern scene_e current_scene;

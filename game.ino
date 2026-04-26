@@ -1,5 +1,8 @@
 #ifndef GAME_INO
 #define GAME_INO
+
+/* this file includes game logic */
+
 #include "scene.ino"
 
 enum class game_state_e {
@@ -18,29 +21,20 @@ void update_game_scene(uint32_t time_diff);
 #ifndef GAME_IMPL_GUARD
 #define GAME_IMPL_GUARD
 
-#include "joystick.ino"
 #include "buzzer.ino"
-#include "screen.ino"
-#include "score.ino"
-#include "title.ino"
 #include "iot_score.ino"
+#include "joystick.ino"
+#include "score.ino"
+#include "screen.ino"
+#include "title.ino"
 
-/* input pins */
 const int SPEED_PIN = 39; // potentiometer: snake speed
 
-/* output pins */
-const int BUZZER_PIN = 12;    // buzzer: sound effect
+const int BUZZER_PIN = 12; // buzzer: sound effect
 
-/* board information */
-const int rows = 4;
-const int columns = 8;
-const int max_snake_len = 32;
-
-/* joystick */
 joystick_dir_t last_move = joystick_dir_t::Right;
 joystick_dir_t pending_move = joystick_dir_t::Right;
 
-/* snake */
 int snake[32] = {0};
 int head = 1;
 int tail = 0;
@@ -55,21 +49,21 @@ bool is_opposite(joystick_dir_t a, joystick_dir_t b) {
            (a == joystick_dir_t::Right && b == joystick_dir_t::Left);
 }
 
-/* fruit spawning logic */
-
 // fruit index
 int fruit = 0;
 
 void spawn_fruit() {
-    bool occupied[max_snake_len] = {false};
-    for (int i = tail; i != head; i = (i + 1) % max_snake_len)
-        occupied[snake[i]] = true;
+    int occupied[32] = {0};
+    for (int i = tail; i != head; i = (i + 1) % 32)
+        occupied[snake[i]] = 1;
 
-    int available[max_snake_len];
+    int available[32];
     int n_available = 0;
-    for (int i = 0; i < max_snake_len; i++)
-        if (!occupied[i])
-            available[n_available++] = i;
+    for (int i = 0; i < 32; i++)
+        if (occupied[i] == 0) {
+            available[n_available] = i;
+            n_available += 1;
+        }
 
     fruit = available[rand() % n_available];
 }
@@ -83,7 +77,7 @@ void reset_snake() {
 }
 
 bool is_body(int idx) {
-    for (int i = tail; i != head; i = (i + 1) % max_snake_len)
+    for (int i = tail; i != head; i = (i + 1) % 32)
         if (snake[i] == idx)
             return true;
     return false;
@@ -91,28 +85,27 @@ bool is_body(int idx) {
 
 game_state_e update_snake() {
     int next;
-    int prev = snake[(head - 1 + max_snake_len) % max_snake_len];
-    const int rows = max_snake_len / columns;
+    int prev = snake[(head - 1 + 32) % 32];
 
     // check if next block is out of bound
     switch (last_move) {
     case joystick_dir_t::Up:
-        if (prev / columns == 0)
+        if (prev / 8 == 0)
             return game_state_e::Lose;
-        next = prev - columns;
+        next = prev - 8;
         break;
     case joystick_dir_t::Down:
-        if (prev / columns == rows - 1)
+        if (prev / 8 == 3)
             return game_state_e::Lose;
-        next = prev + columns;
+        next = prev + 8;
         break;
     case joystick_dir_t::Left:
-        if (prev % columns == 0)
+        if (prev % 8 == 0)
             return game_state_e::Lose;
         next = prev - 1;
         break;
     case joystick_dir_t::Right:
-        if (prev % columns == columns - 1)
+        if (prev % 8 == 7)
             return game_state_e::Lose;
         next = prev + 1;
         break;
@@ -121,19 +114,19 @@ game_state_e update_snake() {
     bool ate = (next == fruit);
 
     if (!ate)
-        tail = (tail + 1) % max_snake_len;
+        tail = (tail + 1) % 32;
 
     if (is_body(next))
         return game_state_e::Lose;
 
     snake[head] = next;
-    head = (head + 1) % max_snake_len;
+    head = (head + 1) % 32;
 
     if (ate) {
         play_eating_sound();
-        
+
         score += 1;
-        if (score == max_snake_len)
+        if (score == 32)
             return game_state_e::Win;
         set_score_display(score);
         spawn_fruit();
@@ -142,10 +135,9 @@ game_state_e update_snake() {
     return game_state_e::Ongoing;
 }
 
-
 /* drawing */
 
-enum class board_cell_e : uint8_t { Air, Snake, Fruit };
+enum class board_cell_e { Air, Snake, Fruit };
 
 void draw_game() {
     write_custom_char(0, 7, custom_char_e::Border);
@@ -163,21 +155,25 @@ void draw_game() {
     for (int i = 0; i < 32; i++)
         board[i] = board_cell_e::Air;
 
-    for (int i = tail; i != head; i = (i + 1) % max_snake_len)
+    for (int i = tail; i != head; i = (i + 1) % 32)
         board[snake[i]] = board_cell_e::Snake;
 
     board[fruit] = board_cell_e::Fruit;
 
     for (int lcd_r = 0; lcd_r < 2; lcd_r++) {
-        for (int lcd_c = 0; lcd_c < columns; lcd_c++) {
-            board_cell_e top = board[(lcd_r * 2) * columns + lcd_c];
-            board_cell_e bot = board[(lcd_r * 2 + 1) * columns + lcd_c];
+        for (int lcd_c = 0; lcd_c < 8; lcd_c++) {
+            // determine what each screen cell should be
+            // since each screen cell is two game cell
+
+            board_cell_e top = board[(lcd_r * 2) * 8 + lcd_c];
+            board_cell_e bot = board[(lcd_r * 2 + 1) * 8 + lcd_c];
 
             if (top == board_cell_e::Air && bot == board_cell_e::Air) {
                 write_ascii_char(lcd_r, 8 + lcd_c, ' ');
                 continue;
             }
 
+            // huge if else for deciding what custom character to use
             custom_char_e glyph;
             if (top == board_cell_e::Snake && bot == board_cell_e::Snake)
                 glyph = custom_char_e::SnakeSnake;
@@ -212,6 +208,8 @@ void reset_game() {
 
     score = 1;
     last_update = 0;
+
+    set_score_display(1);
 }
 
 void to_game_scene() {
