@@ -48,7 +48,6 @@ void write_7seg_digit(int digit) {
 }
 
 void setup_wifi() {
-    return; // to be remove
     WiFi.begin(ssid, password);
 
     while (WiFi.status() != WL_CONNECTED) {
@@ -62,7 +61,6 @@ void setup_wifi() {
 }
 
 void reconnect_mqtt() {
-    return; // to be remove
     if (!client.connected()) {
         Serial.print("Attempting MQTT connection...");
 
@@ -76,7 +74,6 @@ void reconnect_mqtt() {
 }
 
 void init_iot_score() {
-    return; // to be remove
     Serial.begin(115200);
 
     setup_wifi();
@@ -91,7 +88,6 @@ void init_iot_score() {
 }
 
 void update_iot_score(uint32_t time_diff) {
-    return; // to be remove
     static uint32_t mqtt_retry_timer = 0;
 
     mqtt_retry_timer += time_diff;
@@ -124,7 +120,6 @@ void update_iot_score(uint32_t time_diff) {
 }
 
 void set_score_display(int score) {
-    return; // to be remove
     score_display_value = constrain(score, 0, 32);
     score_flash_timer = 0;
     score_flash_tens = true;
@@ -137,7 +132,6 @@ void set_score_display(int score) {
 }
 
 void publish_score(int score) {
-    return; // to be remove
     char scoreString[8];
     itoa(score, scoreString, 10);
 
