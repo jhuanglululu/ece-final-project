@@ -76,8 +76,10 @@ void update_sound(uint32_t time_diff) {
     }
 }
 
+const int EATING_SOUND_DURATION = 100;
+
 void play_eating_sound() {
-    eating_sound_progress = 100;
+    eating_sound_progress = EATING_SOUND_DURATION;
     digitalWrite(ACTIVE_BUZZER_PIN, HIGH);
 }
 

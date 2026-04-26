@@ -27,7 +27,9 @@ void to_score_scene() {
     score_idx = 0;
 }
 
-int high_scores[10] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+const int MAX_SCORE_COUNT = 10;
+
+int high_scores[MAX_SCORE_COUNT] = {0};
 int score_len = 0;
 
 void add_score(int score) {
@@ -35,15 +37,15 @@ void add_score(int score) {
         return;
 
     int i = 0;
-    while (i < 10 && high_scores[i] > score)
+    while (i < MAX_SCORE_COUNT && high_scores[i] > score)
         i += 1;
 
-    for (int rev_i = 9; rev_i > i; rev_i--)
+    for (int rev_i = MAX_SCORE_COUNT - 1; rev_i > i; rev_i--)
         high_scores[rev_i] = high_scores[rev_i - 1];
 
     high_scores[i] = score;
 
-    score_len = min(score_len + 1, 10);
+    score_len = min(score_len + 1, MAX_SCORE_COUNT);
 }
 
 void draw_score(int row, int rank, int score) {

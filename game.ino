@@ -5,6 +5,9 @@
 
 #include "scene.ino"
 
+const int SPEED_PIN = 39;  // potentiometer: snake speed
+const int BUZZER_PIN = 12; // buzzer: sound effect
+
 enum class game_state_e {
     Ongoing,
     Win,
@@ -28,10 +31,6 @@ void update_game_scene(uint32_t time_diff);
 #include "screen.ino"
 #include "title.ino"
 
-const int SPEED_PIN = 39; // potentiometer: snake speed
-
-const int BUZZER_PIN = 12; // buzzer: sound effect
-
 joystick_dir_t last_move = joystick_dir_t::Right;
 joystick_dir_t pending_move = joystick_dir_t::Right;
 
@@ -52,14 +51,18 @@ bool is_opposite(joystick_dir_t a, joystick_dir_t b) {
 // fruit index
 int fruit = 0;
 
+const int MAX_SNAKE_LEN = 32;
+const int GAME_WIDTH = 8;
+const int GAME_HEIGHT = 4;
+
 void spawn_fruit() {
-    int occupied[32] = {0};
-    for (int i = tail; i != head; i = (i + 1) % 32)
+    int occupied[MAX_SNAKE_LEN] = {0};
+    for (int i = tail; i != head; i = (i + 1) % MAX_SNAKE_LEN)
         occupied[snake[i]] = 1;
 
-    int available[32];
+    int available[MAX_SNAKE_LEN];
     int n_available = 0;
-    for (int i = 0; i < 32; i++)
+    for (int i = 0; i < MAX_SNAKE_LEN; i++)
         if (occupied[i] == 0) {
             available[n_available] = i;
             n_available += 1;
@@ -77,7 +80,7 @@ void reset_snake() {
 }
 
 bool is_body(int idx) {
-    for (int i = tail; i != head; i = (i + 1) % 32)
+    for (int i = tail; i != head; i = (i + 1) % MAX_SNAKE_LEN)
         if (snake[i] == idx)
             return true;
     return false;
@@ -85,27 +88,27 @@ bool is_body(int idx) {
 
 game_state_e update_snake() {
     int next;
-    int prev = snake[(head - 1 + 32) % 32];
+    int prev = snake[(head - 1 + MAX_SNAKE_LEN) % MAX_SNAKE_LEN];
 
     // check if next block is out of bound
     switch (last_move) {
     case joystick_dir_t::Up:
-        if (prev / 8 == 0)
+        if (prev / GAME_WIDTH == 0)
             return game_state_e::Lose;
-        next = prev - 8;
+        next = prev - GAME_WIDTH;
         break;
     case joystick_dir_t::Down:
-        if (prev / 8 == 3)
+        if (prev / GAME_WIDTH == GAME_HEIGHT - 1)
             return game_state_e::Lose;
-        next = prev + 8;
+        next = prev + GAME_WIDTH;
         break;
     case joystick_dir_t::Left:
-        if (prev % 8 == 0)
+        if (prev % GAME_WIDTH == 0)
             return game_state_e::Lose;
         next = prev - 1;
         break;
     case joystick_dir_t::Right:
-        if (prev % 8 == 7)
+        if (prev % GAME_WIDTH == GAME_WIDTH - 1)
             return game_state_e::Lose;
         next = prev + 1;
         break;
@@ -114,19 +117,19 @@ game_state_e update_snake() {
     bool ate = (next == fruit);
 
     if (!ate)
-        tail = (tail + 1) % 32;
+        tail = (tail + 1) % MAX_SNAKE_LEN;
 
     if (is_body(next))
         return game_state_e::Lose;
 
     snake[head] = next;
-    head = (head + 1) % 32;
+    head = (head + 1) % MAX_SNAKE_LEN;
 
     if (ate) {
         play_eating_sound();
 
         score += 1;
-        if (score == 32)
+        if (score == MAX_SNAKE_LEN)
             return game_state_e::Win;
         set_score_display(score);
         spawn_fruit();
@@ -151,22 +154,22 @@ void draw_game() {
         write_ascii_char(1, 0, score + '0');
     }
 
-    board_cell_e board[32];
-    for (int i = 0; i < 32; i++)
+    board_cell_e board[MAX_SNAKE_LEN];
+    for (int i = 0; i < MAX_SNAKE_LEN; i++)
         board[i] = board_cell_e::Air;
 
-    for (int i = tail; i != head; i = (i + 1) % 32)
+    for (int i = tail; i != head; i = (i + 1) % MAX_SNAKE_LEN)
         board[snake[i]] = board_cell_e::Snake;
 
     board[fruit] = board_cell_e::Fruit;
 
-    for (int lcd_r = 0; lcd_r < 2; lcd_r++) {
-        for (int lcd_c = 0; lcd_c < 8; lcd_c++) {
+    for (int lcd_r = 0; lcd_r < GAME_HEIGHT / 2; lcd_r++) {
+        for (int lcd_c = 0; lcd_c < GAME_WIDTH; lcd_c++) {
             // determine what each screen cell should be
             // since each screen cell is two game cell
 
-            board_cell_e top = board[(lcd_r * 2) * 8 + lcd_c];
-            board_cell_e bot = board[(lcd_r * 2 + 1) * 8 + lcd_c];
+            board_cell_e top = board[(lcd_r * 2) * GAME_WIDTH + lcd_c];
+            board_cell_e bot = board[(lcd_r * 2 + 1) * GAME_WIDTH + lcd_c];
 
             if (top == board_cell_e::Air && bot == board_cell_e::Air) {
                 write_ascii_char(lcd_r, 8 + lcd_c, ' ');
@@ -219,6 +222,11 @@ void to_game_scene() {
     reset_game();
 }
 
+const int POT_MIN = 0;
+const int POT_MAX = 4095;
+const int SPEED_MIN = 200;
+const int SPEED_MAX = 1000;
+
 void update_game_scene(uint32_t time_diff) {
     if (end_screen_count_down > 0) {
         end_screen_count_down -= time_diff;
@@ -235,7 +243,7 @@ void update_game_scene(uint32_t time_diff) {
         pending_move = dir;
 
     int pot_value = analogRead(SPEED_PIN); // replace with potentiometer value
-    int time_between_update = map(pot_value, 0, 4095, 200, 1000);
+    int time_between_update = map(pot_value, POT_MIN, POT_MAX, SPEED_MIN, SPEED_MAX);
 
     last_update += time_diff;
     while (last_update > time_between_update) {

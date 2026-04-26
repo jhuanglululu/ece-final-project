@@ -29,11 +29,13 @@ struct lcd_mem_slot_t {
     custom_char_e c;
 };
 
+const int LCD_MEM_SLOT_COUNT = 8;
+
 // array that holds what is in the lcd custom character memory
-lcd_mem_slot_t lcd_mems[8];
+lcd_mem_slot_t lcd_mems[LCD_MEM_SLOT_COUNT];
 
 void init_lcd_mem_slot() {
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < LCD_MEM_SLOT_COUNT; i++) {
         lcd_mems[i] = {.last_used = -1, .c = custom_char_e::UpArrow};
     }
 }
@@ -62,11 +64,11 @@ struct cell_t {
     uint8_t value;
 };
 
-const int SCREEN_COLUMN = 16;
-const int SCREEN_ROW = 2;
+const int SCREEN_ROWS = 2;
+const int SCREEN_COLUMNS = 16;
 
-cell_t cur_screen[2][16];
-cell_t next_screen[2][16];
+cell_t cur_screen[SCREEN_ROWS][SCREEN_COLUMNS];
+cell_t next_screen[SCREEN_ROWS][SCREEN_COLUMNS];
 
 int cell_equal(int r, int c) {
     cell_t c1 = cur_screen[r][c];
@@ -77,8 +79,8 @@ int cell_equal(int r, int c) {
 }
 
 void clear_screen() {
-    for (int r = 0; r < 2; r++) {
-        for (int c = 0; c < 16; c++) {
+    for (int r = 0; r < SCREEN_ROWS; r++) {
+        for (int c = 0; c < SCREEN_COLUMNS; c++) {
             next_screen[r][c] = {cell_kind_e::Ascii, ' '};
         }
     }
@@ -93,8 +95,8 @@ void draw_screen() {
 
     // 1st pass: find which custom char does next_screen need
     bool needed[custom_char_count] = {false};
-    for (int r = 0; r < 2; r++) {
-        for (int c = 0; c < 16; c++) {
+    for (int r = 0; r < SCREEN_ROWS; r++) {
+        for (int c = 0; c < SCREEN_COLUMNS; c++) {
             cell_t cell = next_screen[r][c];
             if (cell.kind == cell_kind_e::Custom)
                 needed[cell.value] = true;
@@ -107,7 +109,7 @@ void draw_screen() {
         char_to_slot[i] = -1;
 
     bool slot_kept[8] = {false};
-    for (int s = 0; s < 8; s++) {
+    for (int s = 0; s < LCD_MEM_SLOT_COUNT; s++) {
         lcd_mem_slot_t slot = lcd_mems[s];
         int c = (int)slot.c;
         // if the slot is not empty and we need it
@@ -126,7 +128,7 @@ void draw_screen() {
 
         // best slot is either empty or has not been used for a while
         int best_slot = -1;
-        for (int s = 0; s < 8; s++) {
+        for (int s = 0; s < LCD_MEM_SLOT_COUNT; s++) {
             // someone else is using, skip
             if (slot_kept[s])
                 continue;
@@ -156,8 +158,8 @@ void draw_screen() {
     }
 
     // 4th pass 4: write changed cells
-    for (int r = 0; r < SCREEN_ROW; r++) {
-        for (int c = 0; c < SCREEN_COLUMN; c++) {
+    for (int r = 0; r < SCREEN_ROWS; r++) {
+        for (int c = 0; c < SCREEN_COLUMNS; c++) {
             if (cell_equal(r, c))
                 continue;
 
@@ -180,7 +182,7 @@ void write_ascii_char(int r, int c, char ch) { next_screen[r][c] = {cell_kind_e:
 // call write_ascii_char multiple time to write the string
 void write_string(int r, int c, char *str, int len) {
     for (int i = 0; i < len; i++) {
-        if (c + i >= SCREEN_COLUMN)
+        if (c + i >= SCREEN_COLUMNS)
             break;
         next_screen[r][c + i] = {cell_kind_e::Ascii, (uint8_t)str[i]};
     }
