@@ -4,34 +4,34 @@
 #include "animation.ino"
 #define CUSTOM_CHARS_IMPL
 #include "custom_chars.ino"
-#define JOYSTICK_IMPL
-#include "joystick.ino"
-#define SCREEN_IMPL
-#include "screen.ino"
 #define SCENE_IMPL
 #include "scene.ino"
-#define IOT_SCORE_IMPL
-#include "iot_score.ino"
-#define GAME_IMPL
-#include "game.ino"
+#define JOYSTICK_IMPL
+#include "joystick.ino"
+#define BUZZER_IMPL
+#include "buzzer.ino"
+#define SCREEN_IMPL
+#include "screen.ino"
 #define TITLE_IMPL
 #include "title.ino"
+#define GAME_IMPL
+#include "game.ino"
 #define SCORE_IMPL
 #include "score.ino"
 #define TEAM_IMPL
 #include "team.ino"
-#define BUZZER_IMPL
-#include "buzzer.ino"
+#define IOT_SCORE_IMPL
+#include "iot_score.ino"
 #define IR_REMOTE_IMPL
 #include "ir_remote.ino"
-
-const int POWER_BUTTON_PIN = 14;
-const int LED_PIN = 26;
 
 /*
  * project notes:
  *  - use uint32_t for time related values
  */
+
+const int POWER_BUTTON_PIN = 14;
+const int LED_PIN = 26;
 
 /* setup and loop */
 
