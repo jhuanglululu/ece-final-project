@@ -82,7 +82,7 @@ int system_on = 0;
 
 void update_power_button() {
     static int last_button_state = LOW;
-    bool button_state = digitalRead(POWER_BUTTON_PIN);
+    int button_state = digitalRead(POWER_BUTTON_PIN);
 
     if (button_state == HIGH && last_button_state == LOW) {
         system_on = system_on ^ 0x1;
